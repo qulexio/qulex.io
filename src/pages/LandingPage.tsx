@@ -158,9 +158,23 @@ export default function LandingPage({ onAuth }: { onAuth: (mode: 'login' | 'sign
       <main>
         {/* Hero Section - Editorial Style */}
         <section className="relative pt-40 pb-20 overflow-hidden">
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
-            <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-emerald-500/10 blur-[120px] rounded-full" />
-            <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 blur-[120px] rounded-full" />
+          {/* Video Background */}
+          <div className="absolute inset-0 z-0 bg-[#09090b]">
+            <video
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              className="absolute inset-0 w-full h-full object-cover"
+            >
+              <source 
+                src="https://res.cloudinary.com/dd6vdpihb/video/upload/v1/Gen-4_5_Cinematic_abstract_3D_animation_of_flowing_dark_liquid_metal_with_a_deep_obsidian_finish_Subtle_emerald_green_glowing_data_particles_and_thin_connecting_lines_pulsing_slowly_through_the_flui.gen-4_5_cinema_vq8aot.mp4" 
+                type="video/mp4" 
+              />
+            </video>
+            {/* Gradient Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-[#09090b]" />
           </div>
 
           <div className="max-w-7xl mx-auto px-6 relative z-10">
