@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/supabase';
+import { supabase, getSiteUrl } from '../lib/supabase';
 import { cn } from '../lib/utils';
 import { Loader2, Mail, Lock, User, ArrowLeft, Bot, Github } from 'lucide-react';
 
@@ -45,9 +45,7 @@ export default function AuthPage({
     setLoading(true);
     setError(null);
     try {
-      // Get the current URL or use the APP_URL from environment
-      // In AI Studio, window.location.origin will be the .run.app URL
-      const redirectTo = import.meta.env.VITE_APP_URL || window.location.origin;
+      const redirectTo = getSiteUrl();
       
       console.log(`Initiating ${provider} auth, redirecting back to: ${redirectTo}`);
 
