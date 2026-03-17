@@ -89,14 +89,6 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('marketplace');
 
   useEffect(() => {
-    console.log('Session state changed:', session ? `User: ${session.user.email}` : 'No session');
-  }, [session]);
-
-  useEffect(() => {
-    console.log('Profile state changed:', profile ? `Onboarding Completed: ${profile.onboarding_completed}` : 'No profile');
-  }, [profile]);
-
-  useEffect(() => {
     if (!isSupabaseConfigured) {
       setLoading(false);
       return;
@@ -121,7 +113,6 @@ export default function App() {
   }, []);
 
   const fetchProfile = async (userId: string) => {
-    console.log('Fetching profile for user:', userId);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -130,11 +121,9 @@ export default function App() {
         .single();
 
       if (error && error.code !== 'PGRST116') {
-        console.error('Supabase error fetching profile:', error);
         throw error;
       }
       
-      console.log('Profile data received:', data);
       setProfile(data);
     } catch (err) {
       console.error('Error fetching profile:', err);

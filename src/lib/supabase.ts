@@ -14,14 +14,11 @@ export const supabase = createClient(
   supabaseAnonKey || 'placeholder-key'
 );
 
-export const getSiteUrl = () => {
-  // In a client-side app, window.location.origin is the most reliable source of truth.
-  // It automatically handles whether you are on localhost or a cloud URL (.run.app).
-  let url = window.location.origin;
-  
-  // Ensure no trailing slash
-  url = url.replace(/\/$/, "");
-  
-  console.log('OAuth Redirecting to:', url);
-  return url;
+/**
+ * Helper to get the correct redirect URL for OAuth.
+ * Points to our custom callback route that handles postMessage.
+ */
+export const getRedirectUrl = () => {
+  const baseUrl = process.env.APP_URL || window.location.origin;
+  return `${baseUrl.replace(/\/$/, "")}/auth/callback`;
 };
