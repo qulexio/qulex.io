@@ -260,14 +260,48 @@ function AppContent() {
 }
 
 export default function App() {
-  if (!CLERK_PUBLISHABLE_KEY) {
+  const [clerkKey, setClerkKey] = useState<string | null>(import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || null);
+  const [loading, setLoading] = useState(!clerkKey);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!clerkKey) {
+      fetch('/api/config/clerk')
+        .then(res => res.json())
+        .then(data => {
+          if (data.publishableKey) {
+            setClerkKey(data.publishableKey);
+          } else {
+            setError("Missing Clerk Publishable Key");
+          }
+        })
+        .catch(err => {
+          console.error("Failed to fetch Clerk config:", err);
+          setError("Failed to load configuration");
+        })
+        .finally(() => setLoading(false));
+    }
+  }, [clerkKey]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center space-y-4">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        <p className="text-zinc-500 text-xs font-medium uppercase tracking-widest animate-pulse">
+          Loading Configuration...
+        </p>
+      </div>
+    );
+  }
+
+  if (error || !clerkKey) {
     return <ConfigRequiredPage />;
   }
 
   return (
     <ErrorBoundary>
       <ClerkProvider 
-        publishableKey={CLERK_PUBLISHABLE_KEY}
+        publishableKey={clerkKey}
         appearance={{
           baseTheme: dark
         }}

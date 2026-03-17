@@ -10,9 +10,16 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // API routes can be added here
+  // API routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  // Serve Clerk Publishable Key from server environment
+  app.get("/api/config/clerk", (req, res) => {
+    res.json({ 
+      publishableKey: process.env.VITE_CLERK_PUBLISHABLE_KEY || process.env.CLERK_PUBLISHABLE_KEY 
+    });
   });
 
   // Vite middleware for development
