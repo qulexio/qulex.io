@@ -24,26 +24,44 @@ export default function AuthPage({
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    /**
+     * CROSS-WINDOW COMMUNICATION PATTERN
+     * This listener waits for a message from the AuthCallbackPage (mini-tab).
+     * Once received, it triggers the success flow in the main window.
+     */
     const handleMessage = (event: MessageEvent) => {
-      // Validate origin - allow current origin to support custom domains
-      // We use endsWith to be a bit more flexible with subdomains if any, 
-      // but usually window.location.origin is what we want.
-      if (event.origin !== window.location.origin) return;
+      // Security: Validate origin matches our application
+      const currentOrigin = window.location.origin;
+      const eventOrigin = event.origin;
+      
+      const isAllowedOrigin = 
+        eventOrigin === currentOrigin || 
+        eventOrigin.replace('://www.', '://') === currentOrigin.replace('://www.', '://');
 
+      if (!isAllowedOrigin) return;
+
+      // Check for our specific auth success message
       if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
+        console.log('[Auth] Received success signal from popup');
+        setLoading(false);
         onAuthSuccess();
       }
     };
 
     window.addEventListener('message', handleMessage);
 
-    // Fallback: Periodically check for session if we're in a loading state
-    // This helps if the popup message is lost but auth actually succeeded
+    /**
+     * FALLBACK MECHANISM
+     * If the postMessage fails (e.g. cross-origin issues or closed tab),
+     * we periodically check the session state while the loading spinner is active.
+     */
     let interval: NodeJS.Timeout;
     if (loading) {
       interval = setInterval(async () => {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
+          console.log('[Auth] Fallback: Session detected via polling');
+          setLoading(false);
           onAuthSuccess();
           clearInterval(interval);
         }
@@ -56,38 +74,49 @@ export default function AuthPage({
     };
   }, [onAuthSuccess, loading]);
 
+  /**
+   * SIGN IN WITH POPUP PATTERN
+   * Instead of a full page redirect, we open a mini-tab to keep the user's 
+   * current state in the main application.
+   */
   const handleSocialAuth = async (provider: 'google' | 'github') => {
     setLoading(true);
     setError(null);
     try {
+      const redirectTo = getRedirectUrl();
+      console.log(`[Auth] Initiating ${provider} auth with redirect:`, redirectTo);
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: getRedirectUrl(),
-          skipBrowserRedirect: true,
+          redirectTo,
+          skipBrowserRedirect: true, // Crucial: Prevents main window from redirecting
         },
       });
       
       if (error) throw error;
 
       if (data?.url) {
+        // Calculate popup position (centered)
         const width = 600;
         const height = 700;
         const left = window.screenX + (window.outerWidth - width) / 2;
         const top = window.screenY + (window.outerHeight - height) / 2;
         
+        // Open the OAuth provider's URL in a mini-tab
         const authWindow = window.open(
           data.url,
           'supabase_auth',
-          `width=${width},height=${height},left=${left},top=${top}`
+          `width=${width},height=${height},left=${left},top=${top},status=no,menubar=no,toolbar=no`
         );
 
         if (!authWindow) {
-          setError('Popup blocked. Please allow popups for this site.');
+          setError('Popup blocked. Please allow popups for this site to continue.');
           setLoading(false);
         }
       }
     } catch (err: any) {
+      console.error('[Auth] Social auth error:', err);
       setError(err.message);
       setLoading(false);
     }

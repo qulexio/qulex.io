@@ -17,6 +17,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import DocsPage from './pages/DocsPage';
 import PageLayout from './components/PageLayout';
+import AuthCallbackPage from './pages/AuthCallbackPage';
 import { Loader2, AlertCircle, ExternalLink, RefreshCcw } from 'lucide-react';
 
 // Error Boundary Component
@@ -94,16 +95,48 @@ export default function App() {
       return;
     }
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) fetchProfile(session.user.id);
-      else setLoading(false);
-    });
+    // Initial session check
+    const initSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        console.log('Initial session check:', session?.user?.id);
+        setSession(session);
+        if (session) {
+          await fetchProfile(session.user.id);
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Error during initial session check:', err);
+        setLoading(false);
+      }
+    };
+
+    initSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('Auth state changed event:', _event, 'User:', session?.user?.id);
+      
+      // Safety net: If we are in a popup and just signed in, notify opener and close
+      // This handles cases where the OAuth redirect might have gone to the root instead of /auth/callback
+      if ((_event === 'SIGNED_IN' || _event === 'INITIAL_SESSION') && session) {
+        if (window.opener && window.opener !== window) {
+          console.log('[App] Detected session in popup, notifying opener...');
+          try {
+            window.opener.postMessage({ type: 'SUPABASE_AUTH_SUCCESS' }, '*');
+            window.close();
+          } catch (e) {
+            console.error('[App] Failed to notify opener:', e);
+          }
+        }
+      }
+
+      // Only update if the session actually changed to avoid flicker
       setSession(session);
-      if (session) fetchProfile(session.user.id);
-      else {
+      
+      if (session) {
+        fetchProfile(session.user.id);
+      } else {
         setProfile(null);
         setLoading(false);
       }
@@ -225,7 +258,6 @@ export default function App() {
           <AuthPage 
             onAuthSuccess={() => {
               setShowAuth(false);
-              // Session listener will trigger profile fetch
             }} 
             onBack={() => setShowAuth(false)} 
             initialMode={authMode}
@@ -235,23 +267,8 @@ export default function App() {
       return <LandingPage onAuth={handleAuth} />;
     }
 
-    // 2. Session exists, but profile not loaded or onboarding not done
-    // We check for profile.onboarding_completed explicitly. 
-    // If profile is null (new user), we show onboarding.
-    if (!profile || profile.onboarding_completed === false) {
-      return (
-        <main className="min-h-screen flex flex-col items-center justify-center py-20 bg-[#09090b]">
-          <div className="mb-12 flex flex-col items-center space-y-4">
-            <h1 className="text-xl font-bold text-zinc-100 tracking-tight">qulex.io</h1>
-          </div>
-          <OnboardingForm onComplete={() => {
-            if (session) fetchProfile(session.user.id);
-          }} />
-        </main>
-      );
-    }
-
-    // 3. Session exists and onboarding is complete: Show Dashboard
+    // 2. Session exists: Show Dashboard
+    // We skip the onboarding check for now as requested by the user.
     return (
       <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} profile={profile}>
         {renderDashboardContent()}
@@ -265,6 +282,7 @@ export default function App() {
         <Routes>
           {/* Main Application Route */}
           <Route path="/" element={renderRoot()} />
+          <Route path="/auth/callback" element={<AuthCallbackPage />} />
 
           {/* Other Public Pages */}
           <Route path="/pricing" element={<PageLayout onAuth={handleAuth}><PricingPage /></PageLayout>} />

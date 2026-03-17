@@ -11,7 +11,14 @@ if (!isSupabaseConfigured) {
 
 export const supabase = createClient(
   supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
+  supabaseAnonKey || 'placeholder-key',
+  {
+    auth: {
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  }
 );
 
 /**
@@ -20,5 +27,6 @@ export const supabase = createClient(
  * Uses window.location.origin to support both preview and custom domains.
  */
 export const getRedirectUrl = () => {
-  return `${window.location.origin.replace(/\/$/, "")}/auth/callback`;
+  const origin = window.location.origin;
+  return `${origin.replace(/\/$/, "")}/auth/callback`;
 };
