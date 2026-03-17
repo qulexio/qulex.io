@@ -85,6 +85,7 @@ export default function App() {
   const [session, setSession] = useState<any>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
   const [showAuth, setShowAuth] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
   const [activeTab, setActiveTab] = useState('marketplace');
@@ -92,34 +93,19 @@ export default function App() {
   useEffect(() => {
     if (!isSupabaseConfigured) {
       setLoading(false);
+      setIsInitialized(true);
       return;
     }
 
-    // Initial session check
-    const initSession = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        console.log('Initial session check:', session?.user?.id);
-        setSession(session);
-        if (session) {
-          await fetchProfile(session.user.id);
-        } else {
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error('Error during initial session check:', err);
-        setLoading(false);
-      }
-    };
-
-    initSession();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      console.log('Auth state changed event:', _event, 'User:', session?.user?.id);
+    /**
+     * onAuthStateChange handles both the initial session check (INITIAL_SESSION)
+     * and any subsequent changes (SIGNED_IN, SIGNED_OUT, etc.).
+     */
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
+      console.log(`[App] Auth Event: ${_event}`, currentSession?.user?.id ? `User: ${currentSession.user.id}` : 'No User');
       
       // Safety net: If we are in a popup and just signed in, notify opener and close
-      // This handles cases where the OAuth redirect might have gone to the root instead of /auth/callback
-      if ((_event === 'SIGNED_IN' || _event === 'INITIAL_SESSION') && session) {
+      if ((_event === 'SIGNED_IN' || _event === 'INITIAL_SESSION') && currentSession) {
         if (window.opener && window.opener !== window) {
           console.log('[App] Detected session in popup, notifying opener...');
           try {
@@ -128,18 +114,23 @@ export default function App() {
           } catch (e) {
             console.error('[App] Failed to notify opener:', e);
           }
+          return; // Don't proceed with state updates in the popup
         }
       }
 
-      // Only update if the session actually changed to avoid flicker
-      setSession(session);
+      // Update session state
+      setSession(currentSession);
       
-      if (session) {
-        fetchProfile(session.user.id);
+      if (currentSession) {
+        setLoading(true); // Show loader while fetching profile
+        await fetchProfile(currentSession.user.id);
       } else {
         setProfile(null);
         setLoading(false);
       }
+      
+      // Mark as initialized after the first event is handled
+      setIsInitialized(true);
     });
 
     return () => subscription.unsubscribe();
@@ -165,10 +156,13 @@ export default function App() {
     }
   };
 
-  if (loading) {
+  if (loading || !isInitialized) {
     return (
-      <div className="min-h-screen bg-[#09090b] flex items-center justify-center">
+      <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center space-y-4">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+        <p className="text-zinc-500 text-xs font-medium uppercase tracking-widest animate-pulse">
+          Verifying Session...
+        </p>
       </div>
     );
   }
