@@ -1,4 +1,5 @@
 import React, { ReactNode } from 'react';
+import { useUser, useClerk } from '@clerk/clerk-react';
 import { 
   LayoutDashboard, 
   ShoppingBag, 
@@ -11,7 +12,6 @@ import {
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { Profile } from '../types';
-import { supabase } from '../lib/supabase';
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -28,8 +28,11 @@ const SIDEBAR_ITEMS = [
 ];
 
 export default function DashboardLayout({ children, activeTab, setActiveTab, profile }: DashboardLayoutProps) {
+  const { user } = useUser();
+  const { signOut } = useClerk();
+
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut();
   };
 
   return (
@@ -64,18 +67,18 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, pro
         <div className="p-4 border-t border-border space-y-4">
           <div className="flex items-center gap-3 px-3 py-2">
             <div className="w-8 h-8 rounded-full bg-brand/20 flex items-center justify-center border border-brand/30 overflow-hidden">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
+              {user?.imageUrl ? (
+                <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
               ) : (
                 <User className="w-4 h-4 text-brand" />
               )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium text-text-heading truncate">
-                {profile?.full_name || 'User'}
+                {user?.fullName || user?.username || 'User'}
               </p>
               <p className="text-[10px] text-text-muted truncate">
-                {profile?.role || 'Member'}
+                {user?.primaryEmailAddress?.emailAddress || 'Member'}
               </p>
             </div>
           </div>

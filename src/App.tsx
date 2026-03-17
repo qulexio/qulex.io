@@ -1,5 +1,7 @@
 import React, { Component, useState, useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { ClerkProvider, SignedIn, SignedOut, useAuth, useUser, SignIn, SignUp } from '@clerk/clerk-react';
+import { dark } from '@clerk/themes';
 import { supabase, isSupabaseConfigured } from './lib/supabase';
 import { Profile } from './types';
 import OnboardingForm from './components/OnboardingForm';
@@ -8,7 +10,6 @@ import DashboardPage from './components/DashboardPage';
 import AgentDetailPage from './components/AgentDetailPage';
 import MarketplacePage from './pages/MarketplacePage';
 import LandingPage from './pages/LandingPage';
-import AuthPage from './pages/AuthPage';
 import SettingsPage from './pages/SettingsPage';
 import PricingPage from './pages/PricingPage';
 import AboutPage from './pages/AboutPage';
@@ -17,8 +18,44 @@ import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import DocsPage from './pages/DocsPage';
 import PageLayout from './components/PageLayout';
-import AuthCallbackPage from './pages/AuthCallbackPage';
+import { SignInPage, SignUpPage } from './pages/ClerkAuthPages';
 import { Loader2, AlertCircle, ExternalLink, RefreshCcw } from 'lucide-react';
+
+const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY;
+
+const ConfigRequiredPage = () => (
+  <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-6">
+    <div className="max-w-md w-full p-8 rounded-2xl border border-zinc-800 bg-zinc-900/50 space-y-6 text-center">
+      <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto">
+        <AlertCircle className="w-8 h-8 text-emerald-500" />
+      </div>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold text-zinc-100 tracking-tight">Configuration Required</h1>
+        <p className="text-zinc-400 text-sm leading-relaxed">
+          To enable authentication, you need to provide your Clerk Publishable Key in the Secrets panel.
+        </p>
+      </div>
+      <div className="p-4 rounded-xl bg-white/5 border border-zinc-800 text-left space-y-3">
+        <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Required Environment Variable:</p>
+        <div className="flex items-center gap-2 text-xs font-mono text-zinc-100">
+          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+          VITE_CLERK_PUBLISHABLE_KEY
+        </div>
+      </div>
+      <div className="pt-4 space-y-3">
+        <a 
+          href="https://dashboard.clerk.com" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="w-full py-3 rounded-xl bg-emerald-500 text-black font-semibold flex items-center justify-center gap-2"
+        >
+          Open Clerk Dashboard
+          <ExternalLink className="w-4 h-4" />
+        </a>
+      </div>
+    </div>
+  </div>
+);
 
 // Error Boundary Component
 interface ErrorBoundaryProps {
@@ -81,69 +118,27 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
-export default function App() {
-  const [session, setSession] = useState<any>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [showAuth, setShowAuth] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+function AppContent() {
+  const { isLoaded: isAuthLoaded, userId } = useAuth();
+  const { user } = useUser();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('marketplace');
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [loadingProfile, setLoadingProfile] = useState(false);
 
   useEffect(() => {
-    if (!isSupabaseConfigured) {
-      setLoading(false);
-      setIsInitialized(true);
-      return;
+    if (userId) {
+      fetchProfile(userId);
     }
+  }, [userId]);
 
-    /**
-     * onAuthStateChange handles both the initial session check (INITIAL_SESSION)
-     * and any subsequent changes (SIGNED_IN, SIGNED_OUT, etc.).
-     */
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, currentSession) => {
-      console.log(`[App] Auth Event: ${_event}`, currentSession?.user?.id ? `User: ${currentSession.user.id}` : 'No User');
-      
-      // Safety net: If we are in a popup and just signed in, notify opener and close
-      if ((_event === 'SIGNED_IN' || _event === 'INITIAL_SESSION') && currentSession) {
-        if (window.opener && window.opener !== window) {
-          console.log('[App] Detected session in popup, notifying opener...');
-          try {
-            window.opener.postMessage({ type: 'SUPABASE_AUTH_SUCCESS' }, '*');
-            window.close();
-          } catch (e) {
-            console.error('[App] Failed to notify opener:', e);
-          }
-          return; // Don't proceed with state updates in the popup
-        }
-      }
-
-      // Update session state
-      setSession(currentSession);
-      
-      if (currentSession) {
-        setLoading(true); // Show loader while fetching profile
-        await fetchProfile(currentSession.user.id);
-      } else {
-        setProfile(null);
-        setLoading(false);
-      }
-      
-      // Mark as initialized after the first event is handled
-      setIsInitialized(true);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  const fetchProfile = async (userId: string) => {
+  const fetchProfile = async (id: string) => {
+    setLoadingProfile(true);
     try {
-      // We are confirming landing state is true
-      setLoading(true); 
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
-        .eq('id', userId)
+        .eq('id', id)
         .single();
 
       if (error && error.code !== 'PGRST116') {
@@ -154,67 +149,27 @@ export default function App() {
     } catch (err) {
       console.error('Error fetching profile:', err);
     } finally {
-      // loading end whatever data get or not
-      setLoading(false);
+      setLoadingProfile(false);
     }
   };
 
-  if (loading || !isInitialized) {
+  if (!isAuthLoaded) {
     return (
       <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center space-y-4">
         <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
         <p className="text-zinc-500 text-xs font-medium uppercase tracking-widest animate-pulse">
-          Verifying Session...
+          Initializing Clerk...
         </p>
       </div>
     );
   }
 
-  if (!isSupabaseConfigured) {
-    return (
-      <div className="min-h-screen bg-[#09090b] flex items-center justify-center p-6">
-        <div className="max-w-md w-full p-8 rounded-2xl border border-zinc-800 bg-zinc-900/50 space-y-6 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mx-auto">
-            <AlertCircle className="w-8 h-8 text-emerald-500" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold text-zinc-100 tracking-tight">Configuration Required</h1>
-            <p className="text-zinc-400 text-sm leading-relaxed">
-              To use the full features of qulex.io, you need to connect your Supabase project.
-            </p>
-          </div>
-          <div className="p-4 rounded-xl bg-white/5 border border-zinc-800 text-left space-y-3">
-            <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider">Required Environment Variables:</p>
-            <ul className="space-y-2">
-              <li className="flex items-center gap-2 text-xs font-mono text-zinc-100">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                VITE_SUPABASE_URL
-              </li>
-              <li className="flex items-center gap-2 text-xs font-mono text-zinc-100">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                VITE_SUPABASE_ANON_KEY
-              </li>
-            </ul>
-          </div>
-          <div className="pt-4 space-y-3">
-            <a 
-              href="https://supabase.com/dashboard" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="w-full py-3 rounded-xl bg-emerald-500 text-black font-semibold flex items-center justify-center gap-2"
-            >
-              Open Supabase Dashboard
-              <ExternalLink className="w-4 h-4" />
-            </a>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const handleAuth = (mode: 'login' | 'signup') => {
-    setAuthMode(mode);
-    setShowAuth(true);
+    if (mode === 'login') {
+      navigate('/sign-in');
+    } else {
+      navigate('/sign-up');
+    }
   };
 
   const renderDashboardContent = () => {
@@ -224,7 +179,7 @@ export default function App() {
       case 'marketplace':
         return <MarketplacePage onSelectAgent={(id) => console.log('Selected agent:', id)} />;
       case 'settings':
-        return <SettingsPage profile={profile} onUpdate={() => session && fetchProfile(session.user.id)} />;
+        return <SettingsPage profile={profile} onUpdate={() => userId && fetchProfile(userId)} />;
       case 'agents':
         return (
           <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
@@ -246,68 +201,81 @@ export default function App() {
     }
   };
 
-  // Handle root path logic
-  const renderRoot = () => {
-    // ১. যদি সেশন না থাকে: ল্যান্ডিং পেজ অথবা লগইন পেজ দেখাও
-    if (!session) {
-      if (showAuth) {
-        return (
-          <AuthPage 
-            onAuthSuccess={() => setShowAuth(false)} 
-            onBack={() => setShowAuth(false)} 
-            initialMode={authMode}
-          />
-        );
-      }
-      return <LandingPage onAuth={handleAuth} />;
-    }
+  return (
+    <Routes>
+      {/* Auth Routes */}
+      <Route path="/sign-in/*" element={<SignInPage />} />
+      <Route path="/sign-up/*" element={<SignUpPage />} />
 
-    // ২. সেশন আছে কিন্তু প্রোফাইল এখনো লোড হচ্ছে: এটাই রিডাইরেক্ট লুপ ঠেকাবে
-    if (loading && !profile) {
-      return (
-        <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center space-y-4">
-          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
-          <p className="text-zinc-500 text-xs font-medium uppercase tracking-widest animate-pulse">
-            Verifying Profile...
-          </p>
-        </div>
-      );
-    }
+      {/* Main Application Routes */}
+      <Route path="/" element={
+        <>
+          <SignedIn>
+            <Navigate to="/dashboard" replace />
+          </SignedIn>
+          <SignedOut>
+            <LandingPage onAuth={handleAuth} />
+          </SignedOut>
+        </>
+      } />
 
-    // ৩. সেশন এবং প্রোফাইল দুইটাই আছে: এবার ড্যাশবোর্ড দেখাও
-    return (
-      <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} profile={profile}>
-        {renderDashboardContent()}
-      </DashboardLayout>
-    );
-  };
+      <Route path="/dashboard" element={
+        <>
+          <SignedIn>
+            <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} profile={profile}>
+              {renderDashboardContent()}
+            </DashboardLayout>
+          </SignedIn>
+          <SignedOut>
+            <Navigate to="/" replace />
+          </SignedOut>
+        </>
+      } />
+
+      {/* Other Public Pages */}
+      <Route path="/pricing" element={<PageLayout onAuth={handleAuth}><PricingPage /></PageLayout>} />
+      <Route path="/about" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
+      <Route path="/trust" element={<PageLayout onAuth={handleAuth}><TrustCenterPage /></PageLayout>} />
+      <Route path="/privacy" element={<PageLayout onAuth={handleAuth}><PrivacyPage /></PageLayout>} />
+      <Route path="/terms" element={<PageLayout onAuth={handleAuth}><TermsPage /></PageLayout>} />
+      <Route path="/docs" element={<PageLayout onAuth={handleAuth}><DocsPage /></PageLayout>} />
+      <Route path="/marketplace" element={<PageLayout onAuth={handleAuth}><MarketplacePage onSelectAgent={(id) => handleAuth('signup')} /></PageLayout>} />
+      
+      {/* Fallbacks for missing pages to maintain logical flow */}
+      <Route path="/integrations" element={<PageLayout onAuth={handleAuth}><DocsPage /></PageLayout>} />
+      <Route path="/enterprise" element={<PageLayout onAuth={handleAuth}><PricingPage /></PageLayout>} />
+      <Route path="/api" element={<PageLayout onAuth={handleAuth}><DocsPage /></PageLayout>} />
+      <Route path="/changelog" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
+      <Route path="/community" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
+      <Route path="/status" element={<PageLayout onAuth={handleAuth}><TrustCenterPage /></PageLayout>} />
+      <Route path="/careers" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
+      <Route path="/blog" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
+      <Route path="/contact" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
+      <Route path="/security" element={<PageLayout onAuth={handleAuth}><TrustCenterPage /></PageLayout>} />
+      <Route path="/cookies" element={<PageLayout onAuth={handleAuth}><PrivacyPage /></PageLayout>} />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
+}
+
+export default function App() {
+  if (!CLERK_PUBLISHABLE_KEY) {
+    return <ConfigRequiredPage />;
+  }
 
   return (
     <ErrorBoundary>
-      <BrowserRouter>
-        <Routes>
-          {/* Main Application Route */}
-          <Route path="/" element={renderRoot()} />
-          <Route path="/auth/callback" element={<AuthCallbackPage />} />
-
-          {/* Other Public Pages */}
-          <Route path="/pricing" element={<PageLayout onAuth={handleAuth}><PricingPage /></PageLayout>} />
-          <Route path="/about" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
-          <Route path="/trust" element={<PageLayout onAuth={handleAuth}><TrustCenterPage /></PageLayout>} />
-          <Route path="/privacy" element={<PageLayout onAuth={handleAuth}><PrivacyPage /></PageLayout>} />
-          <Route path="/terms" element={<PageLayout onAuth={handleAuth}><TermsPage /></PageLayout>} />
-          <Route path="/docs" element={<PageLayout onAuth={handleAuth}><DocsPage /></PageLayout>} />
-          <Route path="/marketplace" element={<PageLayout onAuth={handleAuth}><MarketplacePage onSelectAgent={(id) => handleAuth('signup')} /></PageLayout>} />
-          
-          {/* Fallbacks */}
-          <Route path="/integrations" element={<PageLayout onAuth={handleAuth}><DocsPage /></PageLayout>} />
-          <Route path="/enterprise" element={<PageLayout onAuth={handleAuth}><PricingPage /></PageLayout>} />
-          <Route path="/api" element={<PageLayout onAuth={handleAuth}><DocsPage /></PageLayout>} />
-          <Route path="/status" element={<PageLayout onAuth={handleAuth}><TrustCenterPage /></PageLayout>} />
-
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </BrowserRouter>
+      <ClerkProvider 
+        publishableKey={CLERK_PUBLISHABLE_KEY}
+        appearance={{
+          baseTheme: dark
+        }}
+      >
+        <BrowserRouter>
+          <AppContent />
+        </BrowserRouter>
+      </ClerkProvider>
     </ErrorBoundary>
   );
 }
