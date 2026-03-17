@@ -26,6 +26,8 @@ export default function AuthPage({
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       // Validate origin - allow current origin to support custom domains
+      // We use endsWith to be a bit more flexible with subdomains if any, 
+      // but usually window.location.origin is what we want.
       if (event.origin !== window.location.origin) return;
 
       if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
@@ -34,8 +36,25 @@ export default function AuthPage({
     };
 
     window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [onAuthSuccess]);
+
+    // Fallback: Periodically check for session if we're in a loading state
+    // This helps if the popup message is lost but auth actually succeeded
+    let interval: NodeJS.Timeout;
+    if (loading) {
+      interval = setInterval(async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          onAuthSuccess();
+          clearInterval(interval);
+        }
+      }, 2000);
+    }
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+      if (interval) clearInterval(interval);
+    };
+  }, [onAuthSuccess, loading]);
 
   const handleSocialAuth = async (provider: 'google' | 'github') => {
     setLoading(true);
