@@ -17,8 +17,8 @@ export const supabase = createClient(
 /**
  * Helper to get the correct redirect URL for OAuth.
  * Points to our custom callback route that handles postMessage.
+ * Uses window.location.origin to support both preview and custom domains.
  */
 export const getRedirectUrl = () => {
-  const baseUrl = process.env.APP_URL || window.location.origin;
-  return `${baseUrl.replace(/\/$/, "")}/auth/callback`;
+  return `${window.location.origin.replace(/\/$/, "")}/auth/callback`;
 };

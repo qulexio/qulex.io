@@ -25,9 +25,8 @@ export default function AuthPage({
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      // Validate origin
-      const origin = event.origin;
-      if (!origin.endsWith('.run.app') && !origin.includes('localhost')) return;
+      // Validate origin - allow current origin to support custom domains
+      if (event.origin !== window.location.origin) return;
 
       if (event.data?.type === 'SUPABASE_AUTH_SUCCESS') {
         onAuthSuccess();

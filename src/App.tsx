@@ -216,41 +216,55 @@ export default function App() {
     }
   };
 
+  // Handle root path logic
+  const renderRoot = () => {
+    // 1. No session: Show Landing or Auth
+    if (!session) {
+      if (showAuth) {
+        return (
+          <AuthPage 
+            onAuthSuccess={() => {
+              setShowAuth(false);
+              // Session listener will trigger profile fetch
+            }} 
+            onBack={() => setShowAuth(false)} 
+            initialMode={authMode}
+          />
+        );
+      }
+      return <LandingPage onAuth={handleAuth} />;
+    }
+
+    // 2. Session exists, but profile not loaded or onboarding not done
+    // We check for profile.onboarding_completed explicitly. 
+    // If profile is null (new user), we show onboarding.
+    if (!profile || profile.onboarding_completed === false) {
+      return (
+        <main className="min-h-screen flex flex-col items-center justify-center py-20 bg-[#09090b]">
+          <div className="mb-12 flex flex-col items-center space-y-4">
+            <h1 className="text-xl font-bold text-zinc-100 tracking-tight">qulex.io</h1>
+          </div>
+          <OnboardingForm onComplete={() => {
+            if (session) fetchProfile(session.user.id);
+          }} />
+        </main>
+      );
+    }
+
+    // 3. Session exists and onboarding is complete: Show Dashboard
+    return (
+      <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} profile={profile}>
+        {renderDashboardContent()}
+      </DashboardLayout>
+    );
+  };
+
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <Routes>
-          {/* Public Routes */}
-          <Route path="/" element={
-            !session ? (
-              showAuth ? (
-                <AuthPage 
-                  onAuthSuccess={() => {
-                    console.log('Auth success, hiding auth page');
-                    setShowAuth(false);
-                  }} 
-                  onBack={() => setShowAuth(false)} 
-                  initialMode={authMode}
-                />
-              ) : (
-                <LandingPage onAuth={handleAuth} />
-              )
-            ) : (!profile || profile.onboarding_completed === false) ? (
-              <main className="min-h-screen flex flex-col items-center justify-center py-20 bg-[#09090b]">
-                <div className="mb-12 flex flex-col items-center space-y-4">
-                  <h1 className="text-xl font-bold text-zinc-100 tracking-tight">qulex.io</h1>
-                </div>
-                <OnboardingForm onComplete={() => {
-                  console.log('Onboarding complete, refreshing profile');
-                  fetchProfile(session.user.id);
-                }} />
-              </main>
-            ) : (
-              <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} profile={profile}>
-                {renderDashboardContent()}
-              </DashboardLayout>
-            )
-          } />
+          {/* Main Application Route */}
+          <Route path="/" element={renderRoot()} />
 
           {/* Other Public Pages */}
           <Route path="/pricing" element={<PageLayout onAuth={handleAuth}><PricingPage /></PageLayout>} />
