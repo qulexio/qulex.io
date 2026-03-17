@@ -138,6 +138,8 @@ export default function App() {
 
   const fetchProfile = async (userId: string) => {
     try {
+      // We are confirming landing state is true
+      setLoading(true); 
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -152,6 +154,7 @@ export default function App() {
     } catch (err) {
       console.error('Error fetching profile:', err);
     } finally {
+      // loading end whatever data get or not
       setLoading(false);
     }
   };
@@ -245,14 +248,12 @@ export default function App() {
 
   // Handle root path logic
   const renderRoot = () => {
-    // 1. No session: Show Landing or Auth
+    // ১. যদি সেশন না থাকে: ল্যান্ডিং পেজ অথবা লগইন পেজ দেখাও
     if (!session) {
       if (showAuth) {
         return (
           <AuthPage 
-            onAuthSuccess={() => {
-              setShowAuth(false);
-            }} 
+            onAuthSuccess={() => setShowAuth(false)} 
             onBack={() => setShowAuth(false)} 
             initialMode={authMode}
           />
@@ -261,8 +262,19 @@ export default function App() {
       return <LandingPage onAuth={handleAuth} />;
     }
 
-    // 2. Session exists: Show Dashboard
-    // We skip the onboarding check for now as requested by the user.
+    // ২. সেশন আছে কিন্তু প্রোফাইল এখনো লোড হচ্ছে: এটাই রিডাইরেক্ট লুপ ঠেকাবে
+    if (loading && !profile) {
+      return (
+        <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center space-y-4">
+          <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+          <p className="text-zinc-500 text-xs font-medium uppercase tracking-widest animate-pulse">
+            Verifying Profile...
+          </p>
+        </div>
+      );
+    }
+
+    // ৩. সেশন এবং প্রোফাইল দুইটাই আছে: এবার ড্যাশবোর্ড দেখাও
     return (
       <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} profile={profile}>
         {renderDashboardContent()}
@@ -287,18 +299,11 @@ export default function App() {
           <Route path="/docs" element={<PageLayout onAuth={handleAuth}><DocsPage /></PageLayout>} />
           <Route path="/marketplace" element={<PageLayout onAuth={handleAuth}><MarketplacePage onSelectAgent={(id) => handleAuth('signup')} /></PageLayout>} />
           
-          {/* Fallbacks for missing pages to maintain logical flow */}
+          {/* Fallbacks */}
           <Route path="/integrations" element={<PageLayout onAuth={handleAuth}><DocsPage /></PageLayout>} />
           <Route path="/enterprise" element={<PageLayout onAuth={handleAuth}><PricingPage /></PageLayout>} />
           <Route path="/api" element={<PageLayout onAuth={handleAuth}><DocsPage /></PageLayout>} />
-          <Route path="/changelog" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
-          <Route path="/community" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
           <Route path="/status" element={<PageLayout onAuth={handleAuth}><TrustCenterPage /></PageLayout>} />
-          <Route path="/careers" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
-          <Route path="/blog" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
-          <Route path="/contact" element={<PageLayout onAuth={handleAuth}><AboutPage /></PageLayout>} />
-          <Route path="/security" element={<PageLayout onAuth={handleAuth}><TrustCenterPage /></PageLayout>} />
-          <Route path="/cookies" element={<PageLayout onAuth={handleAuth}><PrivacyPage /></PageLayout>} />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
