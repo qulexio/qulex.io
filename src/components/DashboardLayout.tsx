@@ -8,16 +8,15 @@ import {
   LogOut,
   Search,
   Bell,
-  User
+  User,
+  Command
 } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { Profile } from '../types';
 
 interface DashboardLayoutProps {
   children: ReactNode;
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  profile: Profile | null;
 }
 
 const SIDEBAR_ITEMS = [
@@ -27,7 +26,7 @@ const SIDEBAR_ITEMS = [
   { id: 'settings', label: 'Settings', icon: Settings },
 ];
 
-export default function DashboardLayout({ children, activeTab, setActiveTab, profile }: DashboardLayoutProps) {
+export default function DashboardLayout({ children, activeTab, setActiveTab }: DashboardLayoutProps) {
   const { user } = useUser();
   const { signOut } = useClerk();
 
@@ -36,14 +35,20 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, pro
   };
 
   return (
-    <div className="flex min-h-screen bg-bg text-text-muted">
+    <div className="flex min-h-screen bg-[#09090b] text-zinc-400 font-sans selection:bg-[#10b981]/30 selection:text-[#10b981]">
       {/* Sidebar */}
-      <aside className="w-64 border-r border-border flex flex-col fixed h-full bg-bg z-20">
+      <aside className="w-64 border-r border-zinc-800 flex flex-col fixed h-full bg-[#09090b] z-20">
         <div className="p-6 flex items-center gap-3">
-          <span className="text-lg font-bold text-text-heading tracking-tight">qulex.io</span>
+          <div className="w-8 h-8 rounded-lg bg-[#10b981] flex items-center justify-center">
+            <Command className="w-5 h-5 text-black" />
+          </div>
+          <span className="text-lg font-bold text-zinc-100 tracking-tight">qulex.io</span>
         </div>
 
         <nav className="flex-1 px-4 py-4 space-y-1">
+          <div className="px-3 mb-2">
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Platform</p>
+          </div>
           {SIDEBAR_ITEMS.map((item) => (
             <button
               key={item.id}
@@ -51,40 +56,40 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, pro
               className={cn(
                 "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 group",
                 activeTab === item.id 
-                  ? "bg-brand/10 text-brand" 
-                  : "text-text-muted hover:bg-white/5 hover:text-text-heading"
+                  ? "bg-zinc-800 text-zinc-100" 
+                  : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200"
               )}
             >
               <item.icon className={cn(
                 "w-4 h-4 transition-colors",
-                activeTab === item.id ? "text-brand" : "text-text-muted group-hover:text-text-heading"
+                activeTab === item.id ? "text-[#10b981]" : "text-zinc-500 group-hover:text-zinc-300"
               )} />
               {item.label}
             </button>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-border space-y-4">
-          <div className="flex items-center gap-3 px-3 py-2">
-            <div className="w-8 h-8 rounded-full bg-brand/20 flex items-center justify-center border border-brand/30 overflow-hidden">
+        <div className="p-4 border-t border-zinc-800 space-y-4">
+          <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
+            <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 overflow-hidden">
               {user?.imageUrl ? (
                 <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
               ) : (
-                <User className="w-4 h-4 text-brand" />
+                <User className="w-4 h-4 text-zinc-500" />
               )}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-text-heading truncate">
+              <p className="text-xs font-medium text-zinc-100 truncate">
                 {user?.fullName || user?.username || 'User'}
               </p>
-              <p className="text-[10px] text-text-muted truncate">
+              <p className="text-[10px] text-zinc-500 truncate">
                 {user?.primaryEmailAddress?.emailAddress || 'Member'}
               </p>
             </div>
           </div>
           <button 
             onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-text-muted hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
+            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-500 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
           >
             <LogOut className="w-4 h-4" />
             Sign Out
@@ -95,34 +100,30 @@ export default function DashboardLayout({ children, activeTab, setActiveTab, pro
       {/* Main Content */}
       <main className="flex-1 ml-64 min-h-screen flex flex-col">
         {/* Header */}
-        <header className="h-16 border-bottom border-border flex items-center justify-between px-8 sticky top-0 bg-bg/80 backdrop-blur-md z-10">
+        <header className="h-16 border-b border-zinc-800 flex items-center justify-between px-8 sticky top-0 bg-[#09090b]/80 backdrop-blur-md z-10">
           <div className="flex items-center gap-4 flex-1">
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-border flex-shrink-0">
-              <img 
-                src="https://ylnbfmlrkacuirkhkksl.supabase.co/storage/v1/object/public/qulexio/qulex.io.png" 
-                alt="Logo" 
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            </div>
             <div className="relative w-full max-w-md">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
               <input 
                 type="text" 
                 placeholder="Search agents, tools, or docs..." 
-                className="w-full bg-white/5 border border-border rounded-lg py-1.5 pl-10 pr-4 text-sm text-text-heading focus:outline-none focus:border-brand/50 transition-all"
+                className="w-full bg-zinc-900/50 border border-zinc-800 rounded-lg py-1.5 pl-10 pr-4 text-sm text-zinc-100 focus:outline-none focus:border-zinc-700 transition-all placeholder:text-zinc-600"
               />
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                <kbd className="px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-800 text-[10px] text-zinc-500 font-sans">⌘</kbd>
+                <kbd className="px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-800 text-[10px] text-zinc-500 font-sans">K</kbd>
+              </div>
             </div>
           </div>
           
           <div className="flex items-center gap-4">
-            <button className="p-2 text-text-muted hover:text-text-heading transition-colors relative">
+            <button className="p-2 text-zinc-500 hover:text-zinc-100 transition-colors relative">
               <Bell className="w-5 h-5" />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-brand rounded-full border-2 border-bg" />
+              <span className="absolute top-2 right-2 w-1.5 h-1.5 bg-[#10b981] rounded-full border-2 border-[#09090b]" />
             </button>
-            <div className="h-6 w-px bg-border mx-2" />
-            <button className="px-4 py-1.5 rounded-lg bg-brand text-white text-sm font-semibold glow-button">
-              New Agent
+            <div className="h-4 w-px bg-zinc-800 mx-2" />
+            <button className="px-4 py-1.5 rounded-lg bg-zinc-100 text-zinc-950 text-sm font-bold hover:bg-zinc-200 transition-all">
+              Upgrade
             </button>
           </div>
         </header>

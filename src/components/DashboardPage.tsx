@@ -1,183 +1,210 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { motion } from 'motion/react';
+import { useUser } from '@clerk/clerk-react';
 import { 
-  TrendingUp, 
-  Users, 
-  CreditCard, 
-  Rocket, 
+  Plus, 
+  Activity, 
+  Zap, 
+  Cpu, 
+  Shield, 
+  Globe, 
+  MoreHorizontal,
   ArrowUpRight,
-  Plus,
-  Zap,
-  Shield,
-  Globe,
-  Cpu
+  CheckCircle2,
+  Clock,
+  AlertCircle
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
 import { cn } from '../lib/utils';
 
-const SAMPLE_AGENTS = [
+const STATS = [
+  { label: 'Tasks Completed', value: '1,284', trend: '+12%' },
+  { label: 'API Requests', value: '42.5k', trend: '+5.2%' },
+  { label: 'Active Runtime', value: '164h', trend: 'Stable' },
+  { label: 'Avg. Latency', value: '124ms', trend: '-18ms' },
+];
+
+const ACTIVE_AGENTS = [
   {
-    id: 5,
+    id: '1',
     name: 'RevenueFlow',
-    category: 'Autonomous Sales',
-    icon: Rocket,
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-400/10',
-    description: 'Full-cycle SDR engine for autonomous outreach and meeting booking.'
-  },
-  {
-    id: 1,
-    name: 'Nexus-7',
-    category: 'Data Analysis',
-    icon: Cpu,
-    color: 'text-blue-400',
-    bg: 'bg-blue-400/10',
-    description: 'Advanced pattern recognition and data synthesis agent.'
-  },
-  {
-    id: 2,
-    name: 'Aura-1',
-    category: 'Creative Design',
+    status: 'active',
+    task: 'Processing lead generation for Q2 campaign',
     icon: Zap,
-    color: 'text-purple-400',
-    bg: 'bg-purple-400/10',
-    description: 'Generative design assistant for modern UI/UX workflows.'
+    lastActive: '2m ago'
   },
   {
-    id: 3,
+    id: '2',
+    name: 'Nexus-7',
+    status: 'idle',
+    task: 'Waiting for scheduled data sync',
+    icon: Cpu,
+    lastActive: '15m ago'
+  },
+  {
+    id: '3',
     name: 'Sentinel',
-    category: 'Security',
+    status: 'error',
+    task: 'Connection timeout on secondary node',
     icon: Shield,
-    color: 'text-emerald-400',
-    bg: 'bg-emerald-400/10',
-    description: 'Real-time threat detection and automated response system.'
-  },
-  {
-    id: 4,
-    name: 'Atlas',
-    category: 'Global Ops',
-    icon: Globe,
-    color: 'text-orange-400',
-    bg: 'bg-orange-400/10',
-    description: 'Logistics and supply chain optimization specialist.'
+    lastActive: '1h ago'
   }
 ];
 
-import { Profile } from '../types';
+const RECENT_ACTIVITY = [
+  { id: 1, action: 'Agent "RevenueFlow" completed task "Lead Scoring"', time: '4m ago', type: 'success' },
+  { id: 2, action: 'New deployment: "Atlas-Core" initialized', time: '12m ago', type: 'info' },
+  { id: 3, action: 'System alert: High latency detected in Node-B', time: '45m ago', type: 'warning' },
+];
 
-export default function DashboardPage({ profile }: { profile: Profile | null }) {
+export default function DashboardPage() {
+  const { user } = useUser();
+
   return (
-    <div className="space-y-10">
-      {/* Welcome Header */}
-      <div className="flex items-end justify-between">
+    <div className="max-w-6xl mx-auto space-y-12 py-4">
+      {/* Welcome Section */}
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold text-text-heading tracking-tight">
-            Welcome back, {profile?.full_name?.split(' ')[0] || 'Guest'}
+          <h1 className="text-3xl font-medium text-zinc-100 tracking-tight">
+            Good afternoon, {user?.firstName || 'User'}
           </h1>
-          <p className="text-text-muted">
-            Here's what's happening with your agents today.
+          <p className="text-zinc-400 text-sm">
+            Your autonomous agents are currently performing at peak efficiency.
           </p>
         </div>
-        <div className="flex items-center gap-2 text-xs font-mono text-text-muted bg-white/5 px-3 py-1.5 rounded-lg border border-border">
-          <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          System Online
-        </div>
-      </div>
+        <button className="flex items-center gap-2 px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-black font-semibold rounded-lg text-sm transition-all duration-200 shadow-[0_0_20px_rgba(16,185,129,0.15)]">
+          <Plus className="w-4 h-4" />
+          Deploy New Agent
+        </button>
+      </section>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[
-          { label: 'Active Agents', value: '12', icon: Users, trend: '+2 this week' },
-          { label: 'Total Spent/Earned', value: '$4,280.50', icon: CreditCard, trend: '+$840.00' },
-          { label: 'Account Status', value: 'Pro Tier', icon: TrendingUp, trend: 'Active' },
-        ].map((stat, i) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-            className="p-6 rounded-2xl border border-border bg-card/50 hover:border-brand/50 transition-all duration-300 group"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 rounded-lg bg-white/5 text-text-muted group-hover:text-brand transition-colors">
-                <stat.icon className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] font-mono text-emerald-400 bg-emerald-400/10 px-2 py-0.5 rounded-full">
+      {/* Performance Metrics */}
+      <section className="grid grid-cols-2 md:grid-cols-4 gap-px bg-zinc-800 border border-zinc-800 rounded-xl overflow-hidden">
+        {STATS.map((stat, i) => (
+          <div key={stat.label} className="bg-[#09090b] p-6 space-y-2">
+            <p className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">{stat.label}</p>
+            <div className="flex items-baseline gap-2">
+              <h3 className="text-2xl font-medium text-zinc-100 tracking-tight">{stat.value}</h3>
+              <span className={cn(
+                "text-[10px] font-medium",
+                stat.trend.startsWith('+') ? "text-[#10b981]" : 
+                stat.trend.startsWith('-') ? "text-blue-400" : "text-zinc-500"
+              )}>
                 {stat.trend}
               </span>
             </div>
-            <p className="text-sm text-text-muted font-medium">{stat.label}</p>
-            <h3 className="text-2xl font-bold text-text-heading mt-1 tracking-tight">{stat.value}</h3>
-          </motion.div>
+          </div>
         ))}
-      </div>
+      </section>
 
-      {/* Discovery Grid */}
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-text-heading flex items-center gap-2">
-            <Rocket className="w-5 h-5 text-brand" />
-            Discover Agents
+      {/* Active Agents Overview */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between px-1">
+          <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2 uppercase tracking-widest">
+            <Activity className="w-4 h-4 text-[#10b981]" />
+            Active Agents
           </h2>
-          <button className="text-sm text-brand hover:text-brand-hover font-medium transition-colors flex items-center gap-1">
-            View Marketplace
-            <ArrowUpRight className="w-4 h-4" />
+          <button className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors flex items-center gap-1">
+            View all
+            <ArrowUpRight className="w-3 h-3" />
           </button>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {SAMPLE_AGENTS.map((agent, i) => (
+        <div className="border border-zinc-800 rounded-xl overflow-hidden bg-zinc-900/20">
+          {ACTIVE_AGENTS.map((agent, i) => (
             <motion.div
               key={agent.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 + i * 0.1 }}
-              className="glass-card p-6 rounded-2xl flex flex-col h-full group cursor-pointer"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="group flex items-center justify-between p-4 border-b border-zinc-800 last:border-0 hover:bg-white/[0.02] transition-colors cursor-pointer"
             >
-              <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-300", agent.bg)}>
-                <agent.icon className={cn("w-6 h-6", agent.color)} />
-              </div>
-              
-              <div className="flex-1 space-y-2">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-text-heading">{agent.name}</h3>
-                  <span className="text-[10px] font-mono text-text-muted uppercase tracking-wider">{agent.category}</span>
+              <div className="flex items-center gap-4 flex-1">
+                <div className="w-10 h-10 rounded-lg bg-zinc-900 border border-zinc-800 flex items-center justify-center group-hover:border-zinc-700 transition-colors">
+                  <agent.icon className="w-5 h-5 text-zinc-400 group-hover:text-zinc-100 transition-colors" />
                 </div>
-                <p className="text-xs text-text-muted leading-relaxed">
-                  {agent.description}
-                </p>
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-sm font-medium text-zinc-100">{agent.name}</h4>
+                    <div className="flex items-center gap-1.5">
+                      <div className={cn(
+                        "w-1.5 h-1.5 rounded-full",
+                        agent.status === 'active' ? "bg-[#10b981] shadow-[0_0_8px_rgba(16,185,129,0.5)]" :
+                        agent.status === 'idle' ? "bg-zinc-500" : "bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]"
+                      )} />
+                      <span className="text-[10px] text-zinc-500 capitalize">{agent.status}</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-zinc-500 truncate max-w-[200px] md:max-w-md">
+                    {agent.task}
+                  </p>
+                </div>
               </div>
 
-              <button className="mt-6 w-full py-2 rounded-lg bg-white/5 border border-border text-text-heading text-sm font-semibold hover:bg-brand hover:border-brand transition-all duration-300 flex items-center justify-center gap-2">
-                <Plus className="w-4 h-4" />
-                Deploy
-              </button>
+              <div className="flex items-center gap-6">
+                <span className="hidden md:block text-[10px] font-mono text-zinc-600 uppercase tracking-wider">
+                  Last active: {agent.lastActive}
+                </span>
+                <div className="flex items-center gap-2">
+                  <button className="px-3 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[10px] font-bold text-zinc-400 hover:text-zinc-100 hover:border-zinc-700 transition-all">
+                    Details
+                  </button>
+                  <button className="p-1 text-zinc-600 hover:text-red-400 transition-colors">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
             </motion.div>
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Activity Section (Extra for completeness) */}
-      <div className="p-8 rounded-2xl border border-border bg-card/30">
-        <h3 className="text-lg font-semibold text-text-heading mb-6">Recent Activity</h3>
-        <div className="space-y-4">
-          {[
-            { action: 'Nexus-7 deployed', time: '2 hours ago', status: 'Success' },
-            { action: 'Credits topped up', time: '5 hours ago', status: 'Completed' },
-            { action: 'Sentinel updated', time: '1 day ago', status: 'Success' },
-          ].map((item, i) => (
-            <div key={i} className="flex items-center justify-between py-3 border-b border-border/50 last:border-0">
-              <div className="flex items-center gap-3">
-                <div className="w-2 h-2 rounded-full bg-brand" />
-                <span className="text-sm text-text-heading font-medium">{item.action}</span>
+      {/* Bottom Grid: Activity & Quick Access */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        {/* Recent Activity */}
+        <section className="md:col-span-2 space-y-4">
+          <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2 uppercase tracking-widest px-1">
+            <Clock className="w-4 h-4 text-zinc-500" />
+            Recent Activity
+          </h2>
+          <div className="space-y-3">
+            {RECENT_ACTIVITY.map((item) => (
+              <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg border border-zinc-800/50 bg-zinc-900/10">
+                {item.type === 'success' && <CheckCircle2 className="w-4 h-4 text-[#10b981] mt-0.5" />}
+                {item.type === 'info' && <Zap className="w-4 h-4 text-blue-400 mt-0.5" />}
+                {item.type === 'warning' && <AlertCircle className="w-4 h-4 text-red-400 mt-0.5" />}
+                <div className="flex-1 space-y-1">
+                  <p className="text-xs text-zinc-300 leading-relaxed">{item.action}</p>
+                  <span className="text-[10px] text-zinc-600 uppercase font-mono">{item.time}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="text-xs text-text-muted">{item.time}</span>
-                <span className="text-[10px] font-mono text-emerald-400">{item.status}</span>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Quick Access */}
+        <section className="space-y-4">
+          <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2 uppercase tracking-widest px-1">
+            <Globe className="w-4 h-4 text-zinc-500" />
+            Resources
+          </h2>
+          <div className="grid grid-cols-1 gap-2">
+            {[
+              { label: 'API Documentation', link: '#' },
+              { label: 'Agent Templates', link: '#' },
+              { label: 'Community Hub', link: '#' },
+              { label: 'System Status', link: '#' },
+            ].map((resource) => (
+              <a 
+                key={resource.label}
+                href={resource.link}
+                className="group flex items-center justify-between p-3 rounded-lg border border-zinc-800 hover:border-zinc-700 hover:bg-white/[0.02] transition-all"
+              >
+                <span className="text-xs text-zinc-400 group-hover:text-zinc-100 transition-colors">{resource.label}</span>
+                <ArrowUpRight className="w-3 h-3 text-zinc-600 group-hover:text-[#10b981] transition-colors" />
+              </a>
+            ))}
+          </div>
+        </section>
       </div>
     </div>
   );

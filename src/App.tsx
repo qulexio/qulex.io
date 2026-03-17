@@ -175,7 +175,7 @@ function AppContent() {
   const renderDashboardContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <DashboardPage profile={profile} />;
+        return <DashboardPage />;
       case 'marketplace':
         return <MarketplacePage onSelectAgent={(id) => console.log('Selected agent:', id)} />;
       case 'settings':
@@ -197,7 +197,7 @@ function AppContent() {
           </div>
         );
       default:
-        return <DashboardPage profile={profile} />;
+        return <DashboardPage />;
     }
   };
 
@@ -213,7 +213,7 @@ function AppContent() {
       <Route path="/dashboard" element={
         <>
           <SignedIn>
-            <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} profile={profile}>
+            <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab}>
               {renderDashboardContent()}
             </DashboardLayout>
           </SignedIn>

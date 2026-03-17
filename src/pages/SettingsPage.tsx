@@ -1,54 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { User, Shield, Bell, CreditCard, Save, Loader2 } from 'lucide-react';
+import { useUser } from '@clerk/clerk-react';
+import { User, Shield, Bell, CreditCard, Save, Loader2, AlertTriangle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { Profile } from '../types';
 import { cn } from '../lib/utils';
 
 export default function SettingsPage({ profile, onUpdate }: { profile: Profile | null, onUpdate: () => void }) {
+  const { user } = useUser();
   const [loading, setLoading] = useState(false);
-  const [fullName, setFullName] = useState(profile?.full_name || '');
+  const [fullName, setFullName] = useState(profile?.full_name || user?.fullName || '');
   const [role, setRole] = useState(profile?.role || '');
-  const [email, setEmail] = useState('');
 
-  React.useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.email) setEmail(data.user.email);
-    });
-  }, []);
+  useEffect(() => {
+    if (profile) {
+      setFullName(profile.full_name || user?.fullName || '');
+      setRole(profile.role || '');
+    }
+  }, [profile, user]);
 
   const handleSave = async () => {
-    if (!profile) return;
+    if (!user?.id) return;
     setLoading(true);
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({
+        .upsert({
+          id: user.id,
           full_name: fullName,
           role: role,
           updated_at: new Date().toISOString()
-        })
-        .eq('id', profile.id);
+        });
 
       if (error) throw error;
       onUpdate();
-      alert('Settings saved successfully!');
+      // Using a custom notification would be better, but for now console log or simple state
+      console.log('Settings saved successfully!');
     } catch (err) {
       console.error('Error saving settings:', err);
-      alert('Failed to save settings.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-10">
+    <div className="max-w-5xl mx-auto space-y-12 py-4">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold text-text-heading tracking-tight">Settings</h1>
-        <p className="text-text-muted">Manage your account preferences and profile information.</p>
+        <h1 className="text-3xl font-medium text-zinc-100 tracking-tight">Settings</h1>
+        <p className="text-zinc-400 text-sm">Manage your account preferences and profile information.</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
         {/* Navigation */}
         <div className="space-y-1">
           {[
@@ -60,73 +62,102 @@ export default function SettingsPage({ profile, onUpdate }: { profile: Profile |
             <button
               key={item.id}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all",
-                item.id === 'profile' ? "bg-brand/10 text-brand" : "text-text-muted hover:bg-white/5 hover:text-text-heading"
+                "w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-all group",
+                item.id === 'profile' 
+                  ? "bg-zinc-800 text-zinc-100" 
+                  : "text-zinc-500 hover:bg-white/5 hover:text-zinc-300"
               )}
             >
-              <item.icon className="w-4 h-4" />
+              <item.icon className={cn(
+                "w-4 h-4 transition-colors",
+                item.id === 'profile' ? "text-[#10b981]" : "text-zinc-600 group-hover:text-zinc-400"
+              )} />
               {item.label}
             </button>
           ))}
         </div>
 
         {/* Form */}
-        <div className="md:col-span-2 space-y-8">
-          <div className="p-8 rounded-2xl border border-border bg-card/50 space-y-6">
-            <h2 className="text-xl font-semibold text-text-heading">Profile Information</h2>
+        <div className="md:col-span-3 space-y-8">
+          <section className="p-8 rounded-2xl border border-zinc-800 bg-zinc-900/20 space-y-8">
+            <div className="space-y-1">
+              <h2 className="text-lg font-medium text-zinc-100">Profile Information</h2>
+              <p className="text-xs text-zinc-500">This information will be displayed on your public profile.</p>
+            </div>
             
-            <div className="space-y-4">
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Full Name</label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Full Name</label>
                 <input
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-white/5 border border-border rounded-xl py-2.5 px-4 text-sm text-text-heading focus:outline-none focus:border-brand transition-all"
+                  placeholder="Enter your full name"
+                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-zinc-100 focus:outline-none focus:border-zinc-700 transition-all placeholder:text-zinc-700"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Role</label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Role / Occupation</label>
                 <input
                   type="text"
                   value={role}
                   onChange={(e) => setRole(e.target.value)}
-                  className="w-full bg-white/5 border border-border rounded-xl py-2.5 px-4 text-sm text-text-heading focus:outline-none focus:border-brand transition-all"
+                  placeholder="e.g. AI Engineer"
+                  className="w-full bg-zinc-900/50 border border-zinc-800 rounded-lg py-2 px-4 text-sm text-zinc-100 focus:outline-none focus:border-zinc-700 transition-all placeholder:text-zinc-700"
                 />
               </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-medium text-text-muted uppercase tracking-wider">Email Address</label>
-                <input
-                  type="email"
-                  disabled
-                  value={email}
-                  className="w-full bg-white/5 border border-border rounded-xl py-2.5 px-4 text-sm text-text-muted cursor-not-allowed"
-                />
-                <p className="text-[10px] text-text-muted/50">Email cannot be changed directly. Contact support for assistance.</p>
+              <div className="space-y-2 md:col-span-2">
+                <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Email Address</label>
+                <div className="relative">
+                  <input
+                    type="email"
+                    disabled
+                    value={user?.primaryEmailAddress?.emailAddress || ''}
+                    className="w-full bg-zinc-900/30 border border-zinc-800/50 rounded-lg py-2 px-4 text-sm text-zinc-600 cursor-not-allowed"
+                  />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <Shield className="w-3 h-3 text-zinc-700" />
+                  </div>
+                </div>
+                <p className="text-[10px] text-zinc-600 italic">Managed via Clerk Authentication.</p>
               </div>
             </div>
 
-            <div className="pt-6 border-t border-border flex justify-end">
+            <div className="pt-6 border-t border-zinc-800 flex justify-end">
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-brand text-white font-semibold glow-button disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-2 rounded-lg bg-zinc-100 text-zinc-950 font-bold text-sm hover:bg-zinc-200 transition-all disabled:opacity-50"
               >
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save Changes
               </button>
             </div>
-          </div>
+          </section>
 
-          <div className="p-8 rounded-2xl border border-red-500/20 bg-red-500/5 space-y-4">
-            <h2 className="text-xl font-semibold text-red-400">Danger Zone</h2>
-            <p className="text-sm text-text-muted">Once you delete your account, there is no going back. Please be certain.</p>
-            <button className="px-6 py-2.5 rounded-xl border border-red-500/50 text-red-400 font-semibold hover:bg-red-500/10 transition-all">
-              Delete Account
-            </button>
-          </div>
+          <section className="p-8 rounded-2xl border border-red-900/20 bg-red-900/5 space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-red-500/10">
+                <AlertTriangle className="w-5 h-5 text-red-500" />
+              </div>
+              <div className="space-y-0.5">
+                <h2 className="text-lg font-medium text-red-400">Danger Zone</h2>
+                <p className="text-xs text-zinc-500">Permanent actions that cannot be undone.</p>
+              </div>
+            </div>
+            
+            <div className="p-4 rounded-xl border border-red-900/20 bg-red-900/5 flex items-center justify-between gap-4">
+              <div className="space-y-1">
+                <p className="text-sm font-medium text-zinc-200">Delete Account</p>
+                <p className="text-xs text-zinc-500 max-w-md">Once you delete your account, all of your agents, data, and configurations will be permanently removed.</p>
+              </div>
+              <button className="px-4 py-2 rounded-lg border border-red-500/50 text-red-400 font-bold text-xs hover:bg-red-500/10 transition-all whitespace-nowrap">
+                Delete Account
+              </button>
+            </div>
+          </section>
         </div>
       </div>
     </div>
