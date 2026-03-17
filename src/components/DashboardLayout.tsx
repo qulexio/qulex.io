@@ -27,7 +27,7 @@ const SIDEBAR_ITEMS = [
 ];
 
 export default function DashboardLayout({ children, activeTab, setActiveTab }: DashboardLayoutProps) {
-  const { user } = useUser();
+  const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
 
   const handleSignOut = async () => {
@@ -69,31 +69,55 @@ export default function DashboardLayout({ children, activeTab, setActiveTab }: D
           ))}
         </nav>
 
-        <div className="p-4 border-t border-zinc-800 space-y-4">
-          <div className="flex items-center gap-3 px-3 py-2 rounded-xl bg-zinc-900/50 border border-zinc-800/50">
-            <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 overflow-hidden">
-              {user?.imageUrl ? (
-                <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <User className="w-4 h-4 text-zinc-500" />
-              )}
+        <div className="p-4 border-t border-zinc-800">
+          {!isLoaded ? (
+            <div className="flex items-center gap-3 px-2 py-2 animate-pulse">
+              <div className="w-8 h-8 rounded-full bg-zinc-800" />
+              <div className="flex-1 space-y-2">
+                <div className="h-2 bg-zinc-800 rounded w-1/2" />
+                <div className="h-2 bg-zinc-800 rounded w-1/3" />
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-medium text-zinc-100 truncate">
-                {user?.fullName || user?.username || 'User'}
-              </p>
-              <p className="text-[10px] text-zinc-500 truncate">
-                {user?.primaryEmailAddress?.emailAddress || 'Member'}
-              </p>
+          ) : (
+            <div className="flex items-center justify-between gap-2 px-2 py-2 rounded-xl hover:bg-zinc-800/50 transition-all group">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center border border-zinc-700 overflow-hidden shrink-0">
+                  {user?.imageUrl ? (
+                    <img src={user.imageUrl} alt="" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-4 h-4 text-zinc-500" />
+                  )}
+                </div>
+                <div className="flex flex-col min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-zinc-100 truncate">
+                      {user?.firstName || 'User'}
+                    </span>
+                    <span className="px-1 py-0.5 rounded-[4px] bg-[#10b981]/10 text-[#10b981] text-[8px] font-bold uppercase tracking-wider border border-[#10b981]/20">
+                      Pro
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button 
+                  onClick={() => setActiveTab('settings')}
+                  className="p-1.5 text-zinc-500 hover:text-zinc-100 hover:bg-zinc-700 rounded-md transition-all"
+                  title="Settings"
+                >
+                  <Settings className="w-3.5 h-3.5" />
+                </button>
+                <button 
+                  onClick={handleSignOut}
+                  className="p-1.5 text-zinc-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-all"
+                  title="Sign Out"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-          </div>
-          <button 
-            onClick={handleSignOut}
-            className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-zinc-500 hover:bg-red-500/10 hover:text-red-400 transition-all duration-200"
-          >
-            <LogOut className="w-4 h-4" />
-            Sign Out
-          </button>
+          )}
         </div>
       </aside>
 
@@ -106,8 +130,10 @@ export default function DashboardLayout({ children, activeTab, setActiveTab }: D
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
               <input 
                 type="text" 
+                readOnly
+                onClick={() => window.dispatchEvent(new CustomEvent('open-command-bar'))}
                 placeholder="Search agents, tools, or docs..." 
-                className="w-full bg-zinc-900/50 border border-zinc-800 rounded-lg py-1.5 pl-10 pr-4 text-sm text-zinc-100 focus:outline-none focus:border-zinc-700 transition-all placeholder:text-zinc-600"
+                className="w-full bg-zinc-900/50 border border-zinc-800 rounded-lg py-1.5 pl-10 pr-4 text-sm text-zinc-100 focus:outline-none focus:border-zinc-700 transition-all placeholder:text-zinc-600 cursor-pointer"
               />
               <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
                 <kbd className="px-1.5 py-0.5 rounded border border-zinc-700 bg-zinc-800 text-[10px] text-zinc-500 font-sans">⌘</kbd>

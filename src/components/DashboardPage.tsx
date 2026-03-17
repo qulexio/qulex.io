@@ -10,11 +10,10 @@ import {
   Globe, 
   MoreHorizontal,
   ArrowUpRight,
-  CheckCircle2,
-  Clock,
-  AlertCircle
+  Clock
 } from 'lucide-react';
 import { cn } from '../lib/utils';
+import ActivityFeed from './ActivityFeed';
 
 const STATS = [
   { label: 'Tasks Completed', value: '1,284', trend: '+12%' },
@@ -48,12 +47,6 @@ const ACTIVE_AGENTS = [
     icon: Shield,
     lastActive: '1h ago'
   }
-];
-
-const RECENT_ACTIVITY = [
-  { id: 1, action: 'Agent "RevenueFlow" completed task "Lead Scoring"', time: '4m ago', type: 'success' },
-  { id: 2, action: 'New deployment: "Atlas-Core" initialized', time: '12m ago', type: 'info' },
-  { id: 3, action: 'System alert: High latency detected in Node-B', time: '45m ago', type: 'warning' },
 ];
 
 export default function DashboardPage() {
@@ -159,25 +152,15 @@ export default function DashboardPage() {
       </section>
 
       {/* Bottom Grid: Activity & Quick Access */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
         {/* Recent Activity */}
-        <section className="md:col-span-2 space-y-4">
+        <section className="md:col-span-2 space-y-6">
           <h2 className="text-sm font-semibold text-zinc-100 flex items-center gap-2 uppercase tracking-widest px-1">
             <Clock className="w-4 h-4 text-zinc-500" />
             Recent Activity
           </h2>
-          <div className="space-y-3">
-            {RECENT_ACTIVITY.map((item) => (
-              <div key={item.id} className="flex items-start gap-3 p-3 rounded-lg border border-zinc-800/50 bg-zinc-900/10">
-                {item.type === 'success' && <CheckCircle2 className="w-4 h-4 text-[#10b981] mt-0.5" />}
-                {item.type === 'info' && <Zap className="w-4 h-4 text-blue-400 mt-0.5" />}
-                {item.type === 'warning' && <AlertCircle className="w-4 h-4 text-red-400 mt-0.5" />}
-                <div className="flex-1 space-y-1">
-                  <p className="text-xs text-zinc-300 leading-relaxed">{item.action}</p>
-                  <span className="text-[10px] text-zinc-600 uppercase font-mono">{item.time}</span>
-                </div>
-              </div>
-            ))}
+          <div className="px-1">
+            <ActivityFeed />
           </div>
         </section>
 

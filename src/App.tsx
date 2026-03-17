@@ -18,6 +18,7 @@ import PrivacyPage from './pages/PrivacyPage';
 import TermsPage from './pages/TermsPage';
 import DocsPage from './pages/DocsPage';
 import PageLayout from './components/PageLayout';
+import CommandBar from './components/CommandBar';
 import { SignInPage, SignUpPage } from './pages/ClerkAuthPages';
 import { Loader2, AlertCircle, ExternalLink, RefreshCcw } from 'lucide-react';
 
@@ -202,8 +203,10 @@ function AppContent() {
   };
 
   return (
-    <Routes>
-      {/* Auth Routes */}
+    <>
+      <CommandBar />
+      <Routes>
+        {/* Auth Routes */}
       <Route path="/sign-in/*" element={<SignInPage />} />
       <Route path="/sign-up/*" element={<SignUpPage />} />
 
@@ -246,7 +249,8 @@ function AppContent() {
       <Route path="/cookies" element={<PageLayout onAuth={handleAuth}><PrivacyPage /></PageLayout>} />
 
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+      </Routes>
+    </>
   );
 }
 
