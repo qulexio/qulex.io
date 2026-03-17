@@ -89,6 +89,14 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('marketplace');
 
   useEffect(() => {
+    console.log('Session state changed:', session ? `User: ${session.user.email}` : 'No session');
+  }, [session]);
+
+  useEffect(() => {
+    console.log('Profile state changed:', profile ? `Onboarding Completed: ${profile.onboarding_completed}` : 'No profile');
+  }, [profile]);
+
+  useEffect(() => {
     if (!isSupabaseConfigured) {
       setLoading(false);
       return;
@@ -113,6 +121,7 @@ export default function App() {
   }, []);
 
   const fetchProfile = async (userId: string) => {
+    console.log('Fetching profile for user:', userId);
     try {
       const { data, error } = await supabase
         .from('profiles')
@@ -120,7 +129,12 @@ export default function App() {
         .eq('id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') throw error;
+      if (error && error.code !== 'PGRST116') {
+        console.error('Supabase error fetching profile:', error);
+        throw error;
+      }
+      
+      console.log('Profile data received:', data);
       setProfile(data);
     } catch (err) {
       console.error('Error fetching profile:', err);
@@ -222,19 +236,25 @@ export default function App() {
             !session ? (
               showAuth ? (
                 <AuthPage 
-                  onAuthSuccess={() => setShowAuth(false)} 
+                  onAuthSuccess={() => {
+                    console.log('Auth success, hiding auth page');
+                    setShowAuth(false);
+                  }} 
                   onBack={() => setShowAuth(false)} 
                   initialMode={authMode}
                 />
               ) : (
                 <LandingPage onAuth={handleAuth} />
               )
-            ) : !profile || !profile.onboarding_completed ? (
+            ) : (!profile || profile.onboarding_completed === false) ? (
               <main className="min-h-screen flex flex-col items-center justify-center py-20 bg-[#09090b]">
                 <div className="mb-12 flex flex-col items-center space-y-4">
                   <h1 className="text-xl font-bold text-zinc-100 tracking-tight">qulex.io</h1>
                 </div>
-                <OnboardingForm onComplete={() => fetchProfile(session.user.id)} />
+                <OnboardingForm onComplete={() => {
+                  console.log('Onboarding complete, refreshing profile');
+                  fetchProfile(session.user.id);
+                }} />
               </main>
             ) : (
               <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab} profile={profile}>

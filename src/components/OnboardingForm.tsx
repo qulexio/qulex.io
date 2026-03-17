@@ -82,10 +82,17 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
 
   const totalSteps = 6;
 
-  const nextStep = () => setStep((s) => Math.min(s + 1, totalSteps));
-  const prevStep = () => setStep((s) => Math.max(s - 1, 1));
+  const nextStep = () => {
+    console.log('Moving to next step:', step + 1);
+    setStep((s) => Math.min(s + 1, totalSteps));
+  };
+  const prevStep = () => {
+    console.log('Moving to previous step:', step - 1);
+    setStep((s) => Math.max(s - 1, 1));
+  };
 
   const handleUpdate = (field: keyof OnboardingData, value: any) => {
+    console.log(`Updating ${field}:`, value);
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -99,6 +106,7 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
   };
 
   const handleSubmit = async () => {
+    console.log('Submitting onboarding data:', formData);
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -107,6 +115,7 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
         console.warn('No authenticated user found. Simulating submission...');
         await new Promise(resolve => setTimeout(resolve, 1500));
       } else {
+        console.log('Updating profile for user:', user.id);
         const { error } = await supabase
           .from('profiles')
           .upsert({
@@ -117,6 +126,7 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
           });
 
         if (error) throw error;
+        console.log('Profile updated successfully');
       }
       
       setCompleted(true);
@@ -141,6 +151,7 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
               {ROLES.map((role) => (
                 <button
                   key={role}
+                  type="button"
                   onClick={() => {
                     handleUpdate('role', role);
                     nextStep();
@@ -171,6 +182,7 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
               {COMPANY_SIZES.map((size) => (
                 <button
                   key={size}
+                  type="button"
                   onClick={() => {
                     handleUpdate('company_size', size);
                     nextStep();
@@ -217,6 +229,7 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
               {TECH_LEVELS.map((level) => (
                 <button
                   key={level.label}
+                  type="button"
                   onClick={() => {
                     handleUpdate('technical_level', level.label);
                     nextStep();
@@ -252,6 +265,7 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
               {USE_CASES.map((useCase) => (
                 <button
                   key={useCase}
+                  type="button"
                   onClick={() => toggleUseCase(useCase)}
                   className={cn(
                     "flex items-center gap-3 p-4 rounded-xl border transition-all duration-200 text-left",
@@ -284,6 +298,7 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
               {REFERRAL_SOURCES.map((source) => (
                 <button
                   key={source}
+                  type="button"
                   onClick={() => handleUpdate('referral_source', source)}
                   className={cn(
                     "flex items-center justify-between p-4 rounded-xl border transition-all duration-200 text-left",
@@ -320,7 +335,15 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
           <p className="text-text-muted">Welcome to Qulex. We've customized your workspace based on your preferences.</p>
         </div>
         <button 
-          onClick={() => onComplete ? onComplete() : (window.location.href = '/dashboard')}
+          type="button"
+          onClick={() => {
+            console.log('Success screen: Go to Dashboard clicked');
+            if (onComplete) {
+              onComplete();
+            } else {
+              window.location.href = '/';
+            }
+          }}
           className="w-full py-3 px-6 rounded-xl bg-brand text-white font-semibold glow-button"
         >
           Go to Dashboard
@@ -360,6 +383,7 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
 
             <div className="mt-10 flex items-center justify-between pt-6 border-t border-border">
               <button
+                type="button"
                 onClick={prevStep}
                 disabled={step === 1}
                 className={cn(
@@ -373,6 +397,7 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
 
               {step < totalSteps ? (
                 <button
+                  type="button"
                   onClick={nextStep}
                   disabled={
                     (step === 1 && !formData.role) ||
@@ -388,6 +413,7 @@ export default function OnboardingForm({ onComplete }: { onComplete?: () => void
                 </button>
               ) : (
                 <button
+                  type="button"
                   onClick={handleSubmit}
                   disabled={loading || !formData.referral_source}
                   className="flex items-center gap-2 px-8 py-2.5 rounded-xl bg-brand text-white font-semibold glow-button disabled:opacity-50 disabled:cursor-not-allowed"
