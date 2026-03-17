@@ -1,0 +1,5 @@
+{
+  "name": "Webapp Deploy",
+  "description": "A development environment cloned from qulexio/webapp.deploy",
+  "requestFramePermissions": []
+}

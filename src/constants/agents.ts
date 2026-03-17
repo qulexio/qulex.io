@@ -1,0 +1,108 @@
+import { Agent } from '../types';
+
+export const ORIGINAL_AGENTS: Agent[] = [
+  {
+    id: 'bdr-outreach-001',
+    name: 'BDR Outreach Agent',
+    description: 'Researches prospects on LinkedIn, enriches data via Apollo, and drafts personalized cold emails based on recent company news.',
+    category: 'Sales',
+    price: 'Free',
+    capabilities: ['Prospecting', 'Personalization', 'Email Drafting'],
+    model_used: 'GPT-4o',
+    creator_id: 'system',
+    image_url: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200&h=200',
+    rating: 4.9,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'seo-content-002',
+    name: 'SEO Content Strategist',
+    description: 'Analyzes top-ranking competitors, generates detailed content briefs, and optimizes existing articles for target keywords.',
+    category: 'Marketing',
+    price: 'Free',
+    capabilities: ['SEO Analysis', 'Content Briefs', 'Optimization'],
+    model_used: 'GPT-4o',
+    creator_id: 'system',
+    image_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=200&h=200',
+    rating: 4.8,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'support-triage-003',
+    name: 'Customer Support Triage',
+    description: 'Classifies incoming Zendesk/Intercom tickets, drafts initial responses, and escalates complex issues to human agents.',
+    category: 'Customer Support',
+    price: 'Free',
+    capabilities: ['Ticket Classification', 'Auto-Response', 'Escalation'],
+    model_used: 'GPT-4o',
+    creator_id: 'system',
+    image_url: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&q=80&w=200&h=200',
+    rating: 4.7,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'meeting-prep-004',
+    name: 'Meeting Prep Assistant',
+    description: 'Summarizes previous interactions from CRM, researches attendees on LinkedIn, and prepares agenda briefs for upcoming meetings.',
+    category: 'Operations',
+    price: 'Free',
+    capabilities: ['CRM Sync', 'Research', 'Summarization'],
+    model_used: 'GPT-4o',
+    creator_id: 'system',
+    image_url: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?auto=format&fit=crop&q=80&w=200&h=200',
+    rating: 4.9,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'expense-anomaly-005',
+    name: 'Expense Anomaly Detector',
+    description: 'Scans receipts and invoices, flags unusual spending patterns, and syncs data with QuickBooks or Xero automatically.',
+    category: 'Finance',
+    price: 'Free',
+    capabilities: ['OCR', 'Anomaly Detection', 'Accounting Sync'],
+    model_used: 'GPT-4o',
+    creator_id: 'system',
+    image_url: 'https://images.unsplash.com/photo-1554224155-6726b3ff858f?auto=format&fit=crop&q=80&w=200&h=200',
+    rating: 4.6,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'pr-review-006',
+    name: 'PR Review Assistant',
+    description: 'Analyzes GitHub Pull Requests for security vulnerabilities, code style violations, and logic errors before human review.',
+    category: 'Engineering',
+    price: 'Free',
+    capabilities: ['Code Analysis', 'Security Scanning', 'Style Check'],
+    model_used: 'GPT-4o',
+    creator_id: 'system',
+    image_url: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&q=80&w=200&h=200',
+    rating: 4.8,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'talent-sourcing-007',
+    name: 'Talent Sourcing Agent',
+    description: 'Scans job boards and LinkedIn for candidates matching specific criteria and initiates first-touch outreach via email.',
+    category: 'HR',
+    price: 'Free',
+    capabilities: ['Candidate Sourcing', 'Outreach', 'Filtering'],
+    model_used: 'GPT-4o',
+    creator_id: 'system',
+    image_url: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&q=80&w=200&h=200',
+    rating: 4.7,
+    created_at: new Date().toISOString()
+  },
+  {
+    id: 'market-research-008',
+    name: 'Market Research Analyst',
+    description: 'Monitors industry news, competitor updates, and social trends to provide weekly summary reports and actionable insights.',
+    category: 'Strategy',
+    price: 'Free',
+    capabilities: ['News Monitoring', 'Competitor Analysis', 'Reporting'],
+    model_used: 'GPT-4o',
+    creator_id: 'system',
+    image_url: 'https://images.unsplash.com/photo-1551288049-bbbda546697a?auto=format&fit=crop&q=80&w=200&h=200',
+    rating: 4.9,
+    created_at: new Date().toISOString()
+  }
+];
