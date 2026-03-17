@@ -208,16 +208,7 @@ function AppContent() {
       <Route path="/sign-up/*" element={<SignUpPage />} />
 
       {/* Main Application Routes */}
-      <Route path="/" element={
-        <>
-          <SignedIn>
-            <Navigate to="/dashboard" replace />
-          </SignedIn>
-          <SignedOut>
-            <LandingPage onAuth={handleAuth} />
-          </SignedOut>
-        </>
-      } />
+      <Route path="/" element={<LandingPage onAuth={handleAuth} />} />
 
       <Route path="/dashboard" element={
         <>
@@ -227,7 +218,7 @@ function AppContent() {
             </DashboardLayout>
           </SignedIn>
           <SignedOut>
-            <Navigate to="/" replace />
+            <Navigate to="/sign-in" replace />
           </SignedOut>
         </>
       } />
@@ -256,6 +247,24 @@ function AppContent() {
 
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+  );
+}
+
+function ClerkProviderWithNavigation({ children, publishableKey }: { children: React.ReactNode, publishableKey: string }) {
+  const navigate = useNavigate();
+  return (
+    <ClerkProvider 
+      publishableKey={publishableKey}
+      routerPush={(to) => navigate(to)}
+      routerReplace={(to) => navigate(to, { replace: true })}
+      afterSignInUrl="/dashboard"
+      afterSignUpUrl="/dashboard"
+      appearance={{
+        baseTheme: dark
+      }}
+    >
+      {children}
+    </ClerkProvider>
   );
 }
 
@@ -300,16 +309,11 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <ClerkProvider 
-        publishableKey={clerkKey}
-        appearance={{
-          baseTheme: dark
-        }}
-      >
-        <BrowserRouter>
+      <BrowserRouter>
+        <ClerkProviderWithNavigation publishableKey={clerkKey}>
           <AppContent />
-        </BrowserRouter>
-      </ClerkProvider>
+        </ClerkProviderWithNavigation>
+      </BrowserRouter>
     </ErrorBoundary>
   );
 }
