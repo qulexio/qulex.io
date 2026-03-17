@@ -17,6 +17,15 @@ import { cn } from '../lib/utils';
 
 const SAMPLE_AGENTS = [
   {
+    id: 5,
+    name: 'RevenueFlow',
+    category: 'Autonomous Sales',
+    icon: Rocket,
+    color: 'text-emerald-400',
+    bg: 'bg-emerald-400/10',
+    description: 'Full-cycle SDR engine for autonomous outreach and meeting booking.'
+  },
+  {
     id: 1,
     name: 'Nexus-7',
     category: 'Data Analysis',

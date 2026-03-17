@@ -15,6 +15,19 @@ export const ORIGINAL_AGENTS: Agent[] = [
     created_at: new Date().toISOString()
   },
   {
+    id: 'revenueflow-ai-009',
+    name: 'RevenueFlow AI',
+    description: 'Full-cycle autonomous SDR that orchestrates specialized agents to research prospects, analyze psychology, and book meetings via live API integrations.',
+    category: 'Sales',
+    price: 'Premium',
+    capabilities: ['Multi-Agent Orchestration', 'Intent Triggers', 'CRM Sync', 'Autonomous Outreach'],
+    model_used: 'GPT-4o / Multi-Agent',
+    creator_id: 'system',
+    image_url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&q=80&w=200&h=200',
+    rating: 5.0,
+    created_at: new Date().toISOString()
+  },
+  {
     id: 'seo-content-002',
     name: 'SEO Content Strategist',
     description: 'Analyzes top-ranking competitors, generates detailed content briefs, and optimizes existing articles for target keywords.',

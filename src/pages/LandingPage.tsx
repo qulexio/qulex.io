@@ -62,6 +62,13 @@ const WORKFLOW_STEPS = [
 
 const AGENT_SHOWCASE = [
   {
+    name: "RevenueFlow AI",
+    role: "Autonomous Sales",
+    desc: "Full-cycle SDR that orchestrates specialized agents to research, outreach, and book meetings.",
+    impact: "4x Meetings",
+    tags: ["HubSpot", "Salesforce", "Apollo"]
+  },
+  {
     name: "BDR Agent",
     role: "Sales Development",
     desc: "Researches prospects, verifies emails, and writes hyper-personalized outreach at scale.",

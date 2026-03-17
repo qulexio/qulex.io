@@ -45,10 +45,16 @@ export default function AuthPage({
     setLoading(true);
     setError(null);
     try {
+      // Get the current URL or use the APP_URL from environment
+      // In AI Studio, window.location.origin will be the .run.app URL
+      const redirectTo = import.meta.env.VITE_APP_URL || window.location.origin;
+      
+      console.log(`Initiating ${provider} auth, redirecting back to: ${redirectTo}`);
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: {
-          redirectTo: window.location.origin,
+          redirectTo,
         },
       });
       if (error) throw error;
