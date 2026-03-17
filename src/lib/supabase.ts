@@ -15,23 +15,13 @@ export const supabase = createClient(
 );
 
 export const getSiteUrl = () => {
-  // Use the platform-injected APP_URL if available, otherwise fallback to window.location.origin
-  let url = 
-    process.env.APP_URL || 
-    import.meta.env.VITE_APP_URL || 
-    window.location.origin;
+  // In a client-side app, window.location.origin is the most reliable source of truth.
+  // It automatically handles whether you are on localhost or a cloud URL (.run.app).
+  let url = window.location.origin;
   
-  // Ensure the URL is properly formatted (no trailing slash)
+  // Ensure no trailing slash
   url = url.replace(/\/$/, "");
   
-  // Log the detected site URL for debugging
-  console.log('Detected Site URL for OAuth:', url);
-  
-  // If we are on a .run.app but the URL is localhost, something is wrong
-  if (window.location.hostname.includes('.run.app') && url.includes('localhost')) {
-    console.warn('WARNING: Site URL detected as localhost while running in cloud. Using window.location.origin instead.');
-    url = window.location.origin.replace(/\/$/, "");
-  }
-  
+  console.log('OAuth Redirecting to:', url);
   return url;
 };
